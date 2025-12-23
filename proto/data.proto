@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package example;
+
+import "google/protobuf/timestamp.proto";
+
+message Record {
+  google.protobuf.Timestamp timestamp = 1;
+  bytes data = 2;
+}
