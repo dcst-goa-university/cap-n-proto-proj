@@ -83,6 +83,7 @@ name = "cnp-iot-emitter"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "cnp-test-types" },
     { name = "fastapi", extra = ["all"] },
     { name = "grpcio" },
     { name = "polars" },
@@ -93,6 +94,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cnp-test-types", directory = "../lib/cnp_test_types" },
     { name = "fastapi", extras = ["all"], specifier = ">=0.127.0" },
     { name = "grpcio", specifier = ">=1.76.0" },
     { name = "polars", specifier = ">=1.36.1" },
@@ -100,6 +102,17 @@ requires-dist = [
     { name = "requests", specifier = ">=2.32.5" },
     { name = "uvicorn", specifier = ">=0.40.0" },
 ]
+
+[[package]]
+name = "cnp-test-types"
+version = "0.1.0"
+source = { directory = "../lib/cnp_test_types" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic", specifier = ">=2.12.5" }]
 
 [[package]]
 name = "colorama"
