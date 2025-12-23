@@ -1,0 +1,12 @@
+[project]
+name = "cap-n-proto-proj"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi[all]>=0.127.0",
+    "polars>=1.36.1",
+    "pycapnp>=2.2.1",
+    "pydantic>=2.12.5",
+]
