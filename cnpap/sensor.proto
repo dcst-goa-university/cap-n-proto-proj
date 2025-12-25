@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package sensor;
+
+import "google/protobuf/empty.proto";
+
+// Single sensor reading
+message SensorData {
+  double timestamp = 1;
+  int32 value = 2;
+}
+
+// Wrapper for repeated SensorData
+message SensorDataBatch {
+  repeated SensorData data = 1;
+}
+
+// gRPC service equivalent to Cap'n Proto SensorService
+service SensorService {
+  rpc SendData (SensorDataBatch) returns (google.protobuf.Empty);
+}
