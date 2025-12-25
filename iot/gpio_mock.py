@@ -16,5 +16,4 @@ class GPIO:
     def input(pin):
         # simulate random sensor reading 0 or 1
         value = random.randint(0, 1)
-        print(f"[MOCK GPIO] input({pin}) -> {value}")
         return value

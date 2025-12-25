@@ -13,6 +13,7 @@ from cnpap import sensor_pb2, sensor_pb2_grpc
 from cnpap.sensor_pb2 import SensorData, SensorDataBatch
 from cnpap.sensor_pb2_grpc import SensorServiceStub
 import os
+from lib.timelog.service import timeit_if_returned
 
 
 try:
@@ -51,6 +52,7 @@ class IoTService:
             self.grpc_channel = grpc.insecure_channel(grpc_server)
             self.grpc_stub = SensorServiceStub(self.grpc_channel)
 
+    
     # ---------------- Sensor read & store ----------------
     def __read_sensor_data(self):
         return GPIO.input(self.input_pin)
@@ -98,16 +100,7 @@ class IoTService:
 
     # ---------------- HTTP Post ----------------
     def __post_data(self, data_batch: list[dict]):
-        start_time = time.perf_counter()
         response = requests.post(self.post_url, json=data_batch)
-        latency = time.perf_counter() - start_time
-        logger.info(
-            "HTTP POST %s | status=%s | latency=%.3f sec | records=%d",
-            self.post_url,
-            response.status_code,
-            latency,
-            len(data_batch),
-        )
         return response.status_code == 200
 
     # ---------------- gRPC Send ----------------
@@ -120,77 +113,75 @@ class IoTService:
         )
         try:
             self.grpc_stub.SendData(msg)
-            logger.info("gRPC send successful | records=%d", len(batch))
             return True
         except Exception as e:
-            logger.error("gRPC send failed: %s", e)
             return False
 
     # ---------------- Push Methods ----------------
+    @timeit_if_returned
     def push_on_max_http(self):
         if self.__check_if_max_data_reached():
             batch = self.__get_data_batch()
             if self.__post_data(batch):
                 self.__clear_data()
+                return True
 
+    @timeit_if_returned
     def push_on_max_grpc(self):
         if self.__check_if_max_data_reached():
             batch = self.__get_data_batch()
             if self.__grpc_send(batch):
                 self.__clear_data()
+                return True
 
+    @timeit_if_returned
     def push_on_max_cnpnp(self):
         if self.__check_if_max_data_reached():
             batch = self.__get_data_batch()
             payload = self.__serialize_capnp(batch)
-            start = time.perf_counter()
             response = requests.post(
-                self.post_url,
+                self.post_url + "/capnp",
                 data=payload,
                 headers={"Content-Type": "application/x-capnp"},
             )
-            latency = time.perf_counter() - start
-            logger.info(
-                "CAPNP POST %s | status=%s | latency=%.3f sec | records=%d",
-                self.post_url,
-                response.status_code,
-                latency,
-                len(batch),
-            )
             if response.status_code == 200:
                 self.__clear_data()
+                return True
 
+    @timeit_if_returned
     def push_on_max_cnpnp_grpc(self):
         if self.__check_if_max_data_reached() and self.grpc_stub:
             batch = self.__get_data_batch()
             # Just reuse the standard protobuf batch; your Cap'n Proto data is identical
             if self.__grpc_send(batch):
                 self.__clear_data()
+                return True
 
+    @timeit_if_returned
     def push_on_max_arrow(self):
         if self.__check_if_max_data_reached():
             batch = self.__get_data_batch()
             payload = self.__serialize_arrow(batch)
-            start = time.perf_counter()
             response = requests.post(
-                self.post_url,
+                self.post_url + "/arrow",
                 data=payload,
                 headers={"Content-Type": "application/vnd.apache.arrow.stream"},
             )
-            latency = time.perf_counter() - start
-            logger.info(
-                "ARROW POST %s | status=%s | latency=%.3f sec | records=%d",
-                self.post_url,
-                response.status_code,
-                latency,
-                len(batch),
-            )
             if response.status_code == 200:
                 self.__clear_data()
+                return True
     
+    @timeit_if_returned
     def push_on_max_arrow_grpc(self):
         if self.__check_if_max_data_reached() and self.grpc_stub:
             batch = self.__get_data_batch()
             # Simplest approach: convert to protobuf
             if self.__grpc_send(batch):
                 self.__clear_data()
+                return True
+            
+
+    # ---------------- Getter Send ----------------
+
+    def set_max_records(self, new_max_records:int):
+        self.max_records = new_max_records

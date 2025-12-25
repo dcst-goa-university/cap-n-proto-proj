@@ -1,35 +1,44 @@
-from lib.datalib.service import DataService
-from iot.service import IoTService
-import time
+import logging
 
-def main():
-    data_service = DataService()
-    iot_service = IoTService(
-        data_service=data_service,
-        input_pin=17,
-        post_url="http://localhost:8000/server/batch/insert",  # JSON
-        post_interval=1,
-        max_records=10,  # smaller for frequent pushes
-        grpc_server="localhost:50051"
+def setup_logging():
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(message)s"
     )
 
-    transports = {
-        "http" : iot_service.push_on_max_http(),
-        "grpc" : iot_service.push_on_max_grpc(),
-        "cnpnp" : iot_service.push_on_max_cnpnp(),
-        "cnpnp_grpc" : iot_service.push_on_max_cnpnp_grpc(),
-        "arrow" : iot_service.push_on_max_arrow(),
-        "arrow_grpc" : iot_service.push_on_max_arrow_grpc()
-    }
+    file_handler = logging.FileHandler("experimentlog.txt", mode="w")
+    file_handler.setFormatter(formatter)
 
-    for transport in transports.keys():
-        i = 0
-        while i<10:
-            iot_service.monitor_and_store()
-            transports[transport]
-            i += 1
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    root.handlers.clear()
+    root.addHandler(file_handler)
+    root.addHandler(console_handler)
 
 
+setup_logging() 
+
+from .module import IoTModule
+
+
+
+iot = IoTModule()
+
+repition = 230
+max_records = [10**i for i in range(1, 4)]
 
 if __name__ == "__main__":
-    main()
+    TransportClasses = iot.return_transport_classes()
+    for max_record in max_records:
+        for transportClass in TransportClasses:
+            logging.info(f'RUNNING: {transportClass} transport Experiment for max records of {max_record} at repition {repition}')
+            experimentNo = 0
+            while experimentNo < repition:
+                iot.run(max_record, [transportClass])
+                experimentNo += 1
+
+
+
