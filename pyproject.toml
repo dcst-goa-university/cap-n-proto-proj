@@ -8,10 +8,12 @@ dependencies = [
     "fastapi[all]>=0.127.0",
     "grpcio>=1.76.0",
     "grpcio-tools>=1.76.0",
+    "matplotlib>=3.10.8",
     "polars>=1.36.1",
     "pyarrow>=22.0.0",
     "pycapnp>=2.2.1",
     "pydantic>=2.12.5",
     "requests>=2.32.5",
     "rpi-gpio>=0.7.1",
+    "statsmodels>=0.14.6",
 ]

@@ -7,6 +7,9 @@ import pyarrow.ipc as ipc
 from io import BytesIO
 from cnpap.sensor_pb2 import SensorDataBatch
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Load Cap'n Proto schema
 HERE = os.path.dirname(__file__)
@@ -29,10 +32,18 @@ class ServerService():
 
     # ---------------- Cap'n Proto over HTTP ----------------
     def insert_capnp_batch(self, payload: bytes):
-        batch = sensor_data.SensorBatch.from_bytes(payload)
-        data_batch = [{"timestamp": rec.timestamp, "value": rec.value} for rec in batch.records]
-        self.insert_data_batch(data_batch)
-
+        try:
+            with sensor_data.SensorBatch.from_bytes(payload) as batch:
+                data_batch = [
+                    {"timestamp": rec.timestamp, "value": rec.value}
+                    for rec in batch.records
+                ]
+            self.insert_data_batch(data_batch)
+        except Exception:
+            logger.exception("Cap'n Proto decode failed")
+            raise
+        
+        
     # ---------------- Arrow over HTTP ----------------
     def insert_arrow_batch(self, payload: bytes):
         buf = BytesIO(payload)
