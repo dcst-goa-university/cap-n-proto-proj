@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .controller import ServerController
-from .service import ServerService
+from server.controller import ServerController
+from server.service import ServerService
 from uvicorn import run
+import threading
+from server.grpc_server import serve as grpc_serve
 
 def create_app() -> FastAPI:
     app = FastAPI()
 
-    # Set up CORS middleware
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -16,7 +17,6 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Initialize services and controllers
     server_service = ServerService()
     server_controller = ServerController(app.router, server_service)
     server_controller.register_routes()
@@ -24,5 +24,9 @@ def create_app() -> FastAPI:
     return app
 
 if __name__ == "__main__":
+    # Start gRPC server in a separate thread
+    threading.Thread(target=grpc_serve, daemon=True).start()
+
+    # Start FastAPI HTTP server
     app = create_app()
     run(app, host="0.0.0.0", port=8000)
