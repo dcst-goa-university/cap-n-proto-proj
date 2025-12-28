@@ -25,6 +25,7 @@ class ServerService():
     def insert_data_batch(self, data_batch: list[dict]):
         df: DataFrame = self.convert_json_to_polars(data_batch)
         self.data_service.insert_data_batch(df)
+        self.data_service.delete_all_data()
 
     def convert_json_to_polars(self, json_data) -> DataFrame:
         return DataFrame(json_data, schema=pydantic_to_polars_schema(SensorDataDTO))

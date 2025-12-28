@@ -34,7 +34,6 @@ if __name__ == "__main__":
     TransportClasses = iot.return_transport_classes()
     for max_record in max_records:
         for transportClass in TransportClasses:
-            logging.info(f'RUNNING: {transportClass} transport Experiment for max records of {max_record} at repition {repition}')
             experimentNo = 0
             while experimentNo < repition:
                 iot.run(max_record, [transportClass])
